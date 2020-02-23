@@ -10,11 +10,11 @@ fn main() {
         let output_file = File::create(format!("data/{}_out.txt", letter)).unwrap();
         let mut writer = BufWriter::new(output_file);
 
-        writeln!(writer, "{}", libs.len());
+        writeln!(writer, "{}", libs.len()).unwrap();
         for lib in libs {
             let book_ids: Vec<String> = lib.books.into_iter().map(|i| format!("{}", i)).collect();
-            writeln!(writer, "{} {}", lib.id, book_ids.len());
-            writeln!(writer, "{}", book_ids.join(" "));
+            writeln!(writer, "{} {}", lib.id, book_ids.len()).unwrap();
+            writeln!(writer, "{}", book_ids.join(" ")).unwrap();
         }
         writer.flush().unwrap();
     }
@@ -25,6 +25,7 @@ impl Problem {
         let mut remaining_days = self.days;
         let mut libraries_to_choose: Vec<Library> = vec![];
         let empty_vec: Vec<usize> = vec![];
+
         loop {
             let books_to_remove: &Vec<usize> = libraries_to_choose
                 .last()
@@ -60,6 +61,7 @@ impl Problem {
             let library: &mut Library = self.libraries.index_mut(i);
             library.remove_books(books_to_remove);
             let library_score = library.calculate_score(remaining_days, &self.books, i);
+
             if library_score.score > best_score.score {
                 best_score = library_score;
             }
@@ -93,7 +95,7 @@ impl Library {
             .map(|index| problem_books[*index])
             .sum();
 
-        let score = (possible_score as f64) / ((self.sign_up_days * 6) + remaining_days) as f64;
+        let score = (possible_score as f64) / ((self.sign_up_days * 1000) + remaining_days) as f64;
 
         return LibraryScore {
             score,
@@ -113,7 +115,7 @@ fn make_problem(letter: &str) -> Problem {
     let books: Vec<usize> = split_next_vec(&mut lines);
 
     let libraries = (0..num_libraries)
-        .map(|i| make_library(&mut lines, i))
+        .map(|i| make_library(&mut lines, i, &books))
         .collect();
 
     return Problem {
@@ -123,12 +125,16 @@ fn make_problem(letter: &str) -> Problem {
     };
 }
 
-fn make_library(lines: &mut Lines<BufReader<File>>, id: usize) -> Library {
+fn make_library(
+    lines: &mut Lines<BufReader<File>>,
+    id: usize,
+    problem_books: &Vec<usize>,
+) -> Library {
     let library_desc = split_next_vec(lines);
     let sign_up_days = *library_desc.index(1);
     let books_per_day = *library_desc.index(2);
     let mut books = split_next_vec(lines);
-    books.sort_unstable_by(|a, b| b.cmp(a));
+    books.sort_unstable_by(|&a, &b| problem_books[b].cmp(&problem_books[a]));
 
     return Library {
         id,
